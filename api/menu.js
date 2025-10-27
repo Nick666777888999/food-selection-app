@@ -1,68 +1,55 @@
 module.exports = async (req, res) => {
-  // 设置 CORS 头部
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // 设置 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // 处理预检请求
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
-  // 内存存储
   let menuItems = [];
 
   if (req.method === 'GET') {
-    res.status(200).json({
+    return res.json({
       success: true,
       data: menuItems
     });
-    
-  } else if (req.method === 'POST') {
+  }
+
+  if (req.method === 'POST') {
     try {
-      let body = {};
-      
-      // 解析 JSON 主体
-      if (typeof req.body === 'string') {
-        body = JSON.parse(req.body);
-      } else {
-        body = req.body;
-      }
-      
-      const { name, type, image } = body;
-      
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const { name, type } = body;
+
       if (!name || !type) {
         return res.status(400).json({
           success: false,
-          message: '菜品名称和类型是必需的'
+          message: '需要名称和类型'
         });
       }
-      
-      const { v4: uuidv4 } = require('uuid');
+
       const newItem = {
-        id: uuidv4(),
+        id: Date.now().toString(),
         name,
         type,
-        image: image || 'https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=' + encodeURIComponent(name),
+        image: 'https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=' + encodeURIComponent(name),
         createdAt: new Date().toISOString()
       };
-      
+
       menuItems.push(newItem);
-      
-      res.status(201).json({
+
+      return res.json({
         success: true,
-        message: '菜品添加成功',
         data: newItem
       });
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: '服务器错误: ' + error.message
+        message: error.message
       });
     }
-  } else {
-    res.status(405).json({ message: '方法不允许' });
   }
+
+  res.status(405).json({ error: '方法不允许' });
 };

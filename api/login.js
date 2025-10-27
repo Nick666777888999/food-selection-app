@@ -1,54 +1,36 @@
 module.exports = async (req, res) => {
-  // 设置 CORS 头部
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // 设置 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // 处理预检请求
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method === 'POST') {
     try {
-      let body = {};
-      
-      // 解析 JSON 主体
-      if (typeof req.body === 'string') {
-        body = JSON.parse(req.body);
-      } else {
-        body = req.body;
-      }
-      
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const { username, password } = body;
-      
-      const users = [
-        { id: 1, username: "admin", password: "admin123" }
-      ];
-      
-      const user = users.find(u => u.username === username && u.password === password);
-      
-      if (user) {
-        res.status(200).json({ 
-          success: true, 
-          message: '登录成功',
-          user: { id: user.id, username: user.username }
+
+      if (username === 'admin' && password === 'admin123') {
+        return res.json({
+          success: true,
+          user: { username: 'admin' }
         });
       } else {
-        res.status(401).json({ 
-          success: false, 
-          message: '用户名或密码错误' 
+        return res.status(401).json({
+          success: false,
+          message: '用户名或密码错误'
         });
       }
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: '服务器错误: ' + error.message
+        message: error.message
       });
     }
-  } else {
-    res.status(405).json({ message: '方法不允许' });
   }
+
+  res.status(405).json({ error: '方法不允许' });
 };
