@@ -1,4 +1,4 @@
-// API 基础URL - 使用相对路径
+// API 基础URL
 const API_BASE = '/api';
 
 // DOM 元素
@@ -48,11 +48,9 @@ function setupEventListeners() {
     cancelBtn.addEventListener('click', hideAddModal);
     addForm.addEventListener('submit', handleAddItem);
     
-    // 图片上传
     imageUploadArea.addEventListener('click', () => imageInput.click());
     imageInput.addEventListener('change', handleImageUpload);
     
-    // 筛选按钮
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             filterBtns.forEach(b => b.classList.remove('active'));
@@ -79,6 +77,11 @@ async function handleLogin(e) {
             body: JSON.stringify({ username, password })
         });
         
+        // 检查响应状态
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
         if (result.success) {
@@ -92,7 +95,7 @@ async function handleLogin(e) {
         }
     } catch (error) {
         console.error('登录错误:', error);
-        showNotification('登录过程中发生错误', 'error');
+        showNotification('登录失败，请检查网络连接', 'error');
     }
 }
 
@@ -160,6 +163,10 @@ async function handleAddItem(e) {
             body: JSON.stringify({ name, type, image })
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
         if (result.success) {
@@ -171,7 +178,7 @@ async function handleAddItem(e) {
         }
     } catch (error) {
         console.error('添加菜品错误:', error);
-        showNotification('添加菜品过程中发生错误', 'error');
+        showNotification('添加失败，请检查网络连接', 'error');
     }
 }
 
@@ -179,6 +186,11 @@ async function handleAddItem(e) {
 async function loadMenuItems() {
     try {
         const response = await fetch(`${API_BASE}/menu`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
         if (result.success) {
@@ -187,7 +199,7 @@ async function loadMenuItems() {
         }
     } catch (error) {
         console.error('加载菜单错误:', error);
-        showNotification('加载菜单失败', 'error');
+        // 不显示错误通知，因为可能是首次加载
     }
 }
 
@@ -236,7 +248,6 @@ function renderMenuItems() {
 
 // 显示通知
 function showNotification(message, type = 'info') {
-    // 创建通知元素
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white font-semibold z-50 slide-up ${
         type === 'success' ? 'bg-green-500' : 
@@ -247,7 +258,6 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    // 3秒后移除
     setTimeout(() => {
         notification.remove();
     }, 3000);

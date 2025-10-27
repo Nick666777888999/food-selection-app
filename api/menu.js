@@ -1,57 +1,68 @@
-const express = require('express');
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
+module.exports = async (req, res) => {
+  // 设置 CORS 头部
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-const app = express();
+  // 处理预检请求
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-// 中间件
-app.use(cors());
-app.use(express.json());
+  // 内存存储
+  let menuItems = [];
 
-// 内存存储
-let menuItems = [];
-
-// 路由
-app.get('/api/menu', (req, res) => {
-  res.json({
-    success: true,
-    data: menuItems
-  });
-});
-
-app.post('/api/menu', (req, res) => {
-  try {
-    const { name, type, image } = req.body;
+  if (req.method === 'GET') {
+    res.status(200).json({
+      success: true,
+      data: menuItems
+    });
     
-    if (!name || !type) {
-      return res.status(400).json({
+  } else if (req.method === 'POST') {
+    try {
+      let body = {};
+      
+      // 解析 JSON 主体
+      if (typeof req.body === 'string') {
+        body = JSON.parse(req.body);
+      } else {
+        body = req.body;
+      }
+      
+      const { name, type, image } = body;
+      
+      if (!name || !type) {
+        return res.status(400).json({
+          success: false,
+          message: '菜品名称和类型是必需的'
+        });
+      }
+      
+      const { v4: uuidv4 } = require('uuid');
+      const newItem = {
+        id: uuidv4(),
+        name,
+        type,
+        image: image || 'https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=' + encodeURIComponent(name),
+        createdAt: new Date().toISOString()
+      };
+      
+      menuItems.push(newItem);
+      
+      res.status(201).json({
+        success: true,
+        message: '菜品添加成功',
+        data: newItem
+      });
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        message: '菜品名称和类型是必需的'
+        message: '服务器错误: ' + error.message
       });
     }
-    
-    const newItem = {
-      id: uuidv4(),
-      name,
-      type,
-      image: image || 'https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=' + encodeURIComponent(name),
-      createdAt: new Date().toISOString()
-    };
-    
-    menuItems.push(newItem);
-    
-    res.status(201).json({
-      success: true,
-      message: '菜品添加成功',
-      data: newItem
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: '服务器错误: ' + error.message
-    });
+  } else {
+    res.status(405).json({ message: '方法不允许' });
   }
-});
-
-// Vercel 需要导出 app
-module.exports = app;
+};
