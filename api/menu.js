@@ -1,55 +1,60 @@
-module.exports = async (req, res) => {
-  // 设置 CORS
+const menuItems = [];
+
+export default async function handler(req, res) {
+  // 设置 CORS 头
+  res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  let menuItems = [];
-
   if (req.method === 'GET') {
-    return res.json({
+    res.status(200).json({
       success: true,
       data: menuItems
     });
+    return;
   }
 
   if (req.method === 'POST') {
     try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { name, type } = body;
-
+      const { name, type, image } = req.body;
+      
       if (!name || !type) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
-          message: '需要名称和类型'
+          message: '菜品名称和类型是必需的'
         });
+        return;
       }
-
+      
       const newItem = {
         id: Date.now().toString(),
         name,
         type,
-        image: 'https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=' + encodeURIComponent(name),
+        image: image || 'https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=' + encodeURIComponent(name),
         createdAt: new Date().toISOString()
       };
-
+      
       menuItems.push(newItem);
-
-      return res.json({
+      
+      res.status(201).json({
         success: true,
+        message: '菜品添加成功',
         data: newItem
       });
     } catch (error) {
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
-        message: error.message
+        message: '服务器错误: ' + error.message
       });
     }
+    return;
   }
 
-  res.status(405).json({ error: '方法不允许' });
-};
+  res.status(405).json({ message: '方法不允许' });
+}
